@@ -1,10 +1,11 @@
 import { ref, computed, reactive, watch, provide, onMounted, onBeforeMount } from 'vue'
 import { $ } from '@element-plus/utils/util'
-import { VType, ScrollingDir, VirtualListInjectKey } from './constants'
 import { addResizeListener, removeResizeListener } from '@element-plus/utils/resize-event'
+import { VType, ScrollingDir, VirtualListInjectKey } from './constants'
+import { findStartNode, findEndNode } from './utils'
 
 import type { ResizableElement } from '@element-plus/utils/resize-event'
-import type { 
+import type {
   Direction,
   TransformFrom,
   ScrollFromKey,
@@ -33,17 +34,25 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
   const animationHandle = ref<number>(null)
   const viewportRef = ref<ResizableElement>(null)
 
-  const startNode = computed(() => {
-    return Math.max(0, Math.floor(state.offset / props.rowHeight) - props.cache)
-  })
-  
-  const cachedSizes = ref(new Map<string | number, number>()) 
+  // const startNode = computed(() => {
+  //   return Math.max(0, Math.floor(state.offset / props.rowHeight) - props.cache)
+  // })
 
-  const viewportStyle = computed(() => {
-    return {
-      height: `${props.windowSize}px`,
-    }
+  const range = computed(() => {
+    const { startNode } = state
+    const { cache, windowSize, data } = props
+    return [startNode, cache + findEndNode(startNode, windowSize, data.length)]
   })
+
+  const cachedSizes = ref(new Map<string | number, number>())
+
+  // const avgSize = computed(() => {
+  //   return props.type === VType.SIZED ? props.rowHeight :
+  // })
+
+  const viewportStyle = computed(() => ({
+    height: `${props.windowSize}px`,
+  }))
 
   const contentStyle = computed(() => {
     // make this dynamic
@@ -53,25 +62,27 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
   })
 
   const itemContainerStyle = computed(() => {
-    const _offset = $(startNode) * props.rowHeight
+    const _offset = state.startNode * props.rowHeight
     return {
       transform: `${$(transformFromKey)}(${_offset}px)`,
     }
   })
 
   const itemStyle = computed(() => {
-    return {
+    return props.type === VType.SIZED ? {
       height: `${props.rowHeight}px`,
-    }
+    } : undefined
   })
 
   // actually rendering window = data[start ... end]
   const window = computed(() => {
+    const { startNode } = state
+    const { windowSize, rowHeight, cache, data } = props
     const size = Math.min(
-      props.data.length - $(startNode),
-      Math.ceil(props.windowSize / props.rowHeight + 2 * props.cache),
+      data.length - startNode,
+      Math.ceil(windowSize / rowHeight + 2 * cache),
     )
-    return props.data.slice($(startNode), $(startNode) + size)
+    return data.slice(startNode, startNode + size)
   })
 
 
@@ -87,6 +98,7 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
       // scroll left will be negative, now we do not consider situations like this.
       // _offset should always be greater or equal than 0.
       const _offset = (e.target as HTMLElement)[$(scrollFromKey)]
+      console.log(_offset)
 
       const viewportVisibleSize = props.windowSize
       // get view port sizes via `clientHeight` or `clientWidth`
@@ -95,7 +107,7 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
       let scrollingDir: ScrollingDir
       if (_offset < state.offset) {
         scrollingDir = ScrollingDir.BACKWARD
-        backward(_offset)
+        backwarding(_offset)
       } else {
         scrollingDir = ScrollingDir.FORWARD
         forwarding(_offset)
@@ -106,43 +118,44 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
     })
   }
 
-  function backward(offset: number) {
-    const newStartNode = findStartNode(offset, props.type, props.data.length, undefined)
-    // should not change range if start doesn't exceed overs
-    if (newStartNode > this.range.start) {
+  function backwarding(offset: number) {
+    const { type, data, cache, windowSize } = props
+    const _cachedSize = Array.from(cachedSizes.value.values())
+    const newStartNode = findStartNode(offset, type, data.length, undefined, _cachedSize)
+
+    if (newStartNode > state.startNode) {
       return
     }
 
-    // move up start by a buffer length, and make sure its safety
-    const start = Math.max(newStartNode - props.cache, 0)
+    const start = Math.max(newStartNode - cache, 0)
     state.startNode = start
-    state.endNode = findEndNode(start)
+    state.endNode = findEndNode(start, windowSize, data.length)
   }
 
   function forwarding(offset: number) {
     let newStart: number
-    const { data, rowHeight, cache } = props
+    const { data, rowHeight, cache, windowSize } = props
     if (props.type === VType.SIZED) {
-      newStart = findStartNode(offset, VType.SIZED, data.length, rowHeight)
+      newStart = findStartNode(offset, VType.SIZED, data.length, rowHeight, undefined)
     } else {
-      newStart = findStartNode(offset, VType.UNSIZED, data.length, undefined)
+      const _cachedSizes = Array.from(cachedSizes.value.values())
+      newStart = findStartNode(offset, VType.UNSIZED, data.length, undefined, _cachedSizes)
     }
     // range should not change if scroll overs within buffer
     if (newStart < state.startNode + cache) {
       return
     }
 
-    state.startNode = newStart
-    state.endNode = findEndNode()
+    const start = Math.max(newStart - cache, 0)
+
+    state.startNode = start
+    state.endNode = findEndNode(start, windowSize, data.length)
 
     this.checkRange(newStart, this.getEndByStart(newStart))
   }
 
   function setSize(id: IDType, size: number) {
     cachedSizes.value.set(id, size)
-
-    // get updates
-
   }
 
   function delSize(id: IDType) {
@@ -155,90 +168,55 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
     delSize,
   })
 
-  onMounted(() => {
-    addResizeListener($(viewportRef), () => {}) // implement
-  })
+  // onMounted(() => {
+  //   addResizeListener($(viewportRef), () => {}) // implement
+  // })
 
-  onBeforeMount(() => {
-    removeResizeListener($(viewportRef), () => {}) // implement
-  })
+  // onBeforeMount(() => {
+  //   removeResizeListener($(viewportRef), () => {}) // implement
+  // })
 
-  watch(
-    () => [state.startNode, state.endNode],
-    ([newStart, newEnd], [prevStart]) => {
-      const { cache, data } = props
-      const len = data.length
+  // watch(
+  //   () => [state.startNode, state.endNode],
+  //   ([newStart, newEnd], [prevStart]) => {
+  //     const { cache, data } = props
+  //     const len = data.length
 
-      // datas less than keeps, render all
-      if (len <= cache) {
-        newStart = 0
-        newEnd = this.getLastIndex()
-      } else if (newEnd - newStart < cache - 1) {
-        // if range length is less than keeps, corrent it base on newEnd
-        newStart = newEnd - cache + 1
-      }
+  //     // datas less than keeps, render all
+  //     if (len <= cache) {
+  //       newStart = 0
+  //       newEnd = this.getLastIndex()
+  //     } else if (newEnd - newStart < cache - 1) {
+  //       // if range length is less than keeps, corrent it base on newEnd
+  //       newStart = newEnd - cache + 1
+  //     }
 
-      if (prevStart !== newStart) {
-        this.updateRange(newStart, newEnd)
-      }
-    },
-  )
+  //     if (prevStart !== newStart) {
+  //       this.updateRange(newStart, newEnd)
+  //     }
+  //   },
+  // )
+
+  // watch(() => cachedSizes.value.size, val => {
+  //   const { type, data } = props
+  //   if (type === VType.SIZED) {
+  //     if (val < Math.min(data.length, $(range)[1])) {
+
+  //     }
+  //   } else {
+
+  //   }
+  // })
 
   return {
+    state,
     viewportRef,
     contentStyle,
     itemContainerStyle,
     itemStyle,
-    startNode,
+    // startNode,
     viewportStyle,
     window,
     onScroll,
   }
-}
-
-function findStartNode<T extends VType>(
-  offset: number,
-  type: T,
-  itemCount: number,
-  size: T extends VType.SIZED ? number : undefined,
-  sizes: number[],
-) {
-
-  if (offset <= 0) {
-    return 0
-  }
-
-  if (type === VType.SIZED) {
-    return Math.floor(offset / size)
-  }
-
-  let start = 0
-  let end = itemCount - 1
-
-  while (end !== start) {
-    const middle = Math.floor((end - start) / 2 + start)
-
-    // find a way to get sizes cached
-    if (sizes[middle] <= offset && sizes[middle + 1] > offset) {
-      return middle
-    }
-
-    if (middle === start) return end
-    else {
-      // find a way to calculate size.
-      if (sizes[middle] <= offset) {
-        start = middle
-      } else {
-        end = middle
-      }
-    }
-  }
-
-  return itemCount
-}
-
-function findEndNode(startNode: number, itemCount: number, sizes: number[]) {
-  let endNode: number
-
-  return endNode
 }

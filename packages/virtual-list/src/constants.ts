@@ -50,12 +50,20 @@ export const listProps = {
     type: Array as PropType<Array<any>>,
     required: true,
   },
+  // this will be needed no matter type is SIZED or UNSIZED
+  // when type is SIZED, this value will be used as the size of the list item
+  // when type is UNSIZED, this value will be used as the average size of the list item
+  // the more accurate the this was given, the more the precise the calculation would be.
   rowHeight: {
     type: Number,
     required: true,
   },
   windowSize: {
     type: Number,
+    required: true,
+  },
+  type: {
+    type: String as PropType<VType>,
     required: true,
   },
 }

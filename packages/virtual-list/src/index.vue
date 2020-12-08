@@ -7,8 +7,8 @@
   >
     <div class="el-vl__content" :style="contentStyle">
       <div class="el-vl__item-container" :style="itemContainerStyle">
-        <div v-for="(item, idx) in window" :key="idx + startNode" :style="itemStyle">
-          <slot :item="item"></slot>
+        <div v-for="(item, idx) in window" :key="idx + state.startNode" :style="itemStyle">
+          <slot :item="item">{{ idx }}</slot>
         </div>
       </div>
     </div>

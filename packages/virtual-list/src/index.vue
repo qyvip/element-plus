@@ -3,7 +3,7 @@
     ref="viewportRef"
     class="el-vl__viewport"
     :style="viewportStyle"
-    @scroll="onScroll"
+    @scroll.passive="onScroll"
   >
     <div class="el-vl__content" :style="contentStyle">
       <div class="el-vl__item-container" :style="itemContainerStyle">
@@ -17,34 +17,11 @@
 <script lang='ts'>
 import { defineComponent } from 'vue'
 import useVirtualScroll from './useVirtualScroll'
-
-import type { PropType } from 'vue'
-import type { Direction } from './useVirtualScroll'
+import { listProps } from './constants'
 
 export default defineComponent({
   name: 'ElVirtualList',
-  props: {
-    cache: {
-      type: Number,
-      default: 10,
-    },
-    direction: {
-      type: String as PropType<Direction>,
-      default: 'v',
-    },
-    data: {
-      type: Array as PropType<Array<any>>,
-      required: true,
-    },
-    rowHeight: {
-      type: Number,
-      required: true,
-    },
-    windowSize: {
-      type: Number,
-      required: true,
-    },
-  },
+  props: listProps,
   setup(props) {
     // init here
 

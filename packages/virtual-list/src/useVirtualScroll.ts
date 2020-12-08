@@ -1,39 +1,26 @@
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch, provide, onMounted, onBeforeMount } from 'vue'
 import { $ } from '@element-plus/utils/util'
+import { VType, ScrollingDir, VirtualListInjectKey } from './constants'
+import { addResizeListener, removeResizeListener } from '@element-plus/utils/resize-event'
 
-export type Direction = 'h' | 'v'
-export type TransformFrom = 'translateX' | 'translateY'
-export type ScrollFromKey = 'scrollLeft' | 'scrollHeight'
-export type ViewportSizeKey = 'scrollWidth' | 'scrollHeight'
-
-export enum VType {
-  SIZED = 'sized',
-  UNSIZED = 'unsized',
-}
-
-export enum ScrollingDir {
-  FORWARD = 'forward',
-  BACKWARD = 'backward',
-}
-export interface ElVirtualScrollProps<T> {
-  windowSize: number
-  direction: 'h' | 'v' // h stands for horizontal, v stands for virtical, defaults to vertical
-  data: Array<T>
-  rowHeight: number
-  cache: number
-  type: VType
-}
-
-
-
+import type { ResizableElement } from '@element-plus/utils/resize-event'
+import type { 
+  Direction,
+  TransformFrom,
+  ScrollFromKey,
+  ViewportSizeKey,
+  ElVirtualScrollProps,
+  IDType,
+} from './constants'
 
 export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
   const state = reactive({
     offset: 0,
-    scrolllingDir: ScrollingDir.FORWARD,
+    scrollingDir: ScrollingDir.FORWARD,
     startNode: 0,
     endNode: 0,
   })
+
   const transformFromKey = ref(
     `translate${props.direction === 'h' ? 'X' : 'Y'}` as TransformFrom,
   )
@@ -44,10 +31,13 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
     `scroll${props.direction === 'h' ? 'Width' : 'Height'}` as ViewportSizeKey,
   )
   const animationHandle = ref<number>(null)
+  const viewportRef = ref<ResizableElement>(null)
 
   const startNode = computed(() => {
     return Math.max(0, Math.floor(state.offset / props.rowHeight) - props.cache)
   })
+  
+  const cachedSizes = ref(new Map<string | number, number>()) 
 
   const viewportStyle = computed(() => {
     return {
@@ -84,6 +74,7 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
     return props.data.slice($(startNode), $(startNode) + size)
   })
 
+
   const onScroll = (e: Event) => {
     const handle = $(animationHandle)
     if (handle) {
@@ -104,18 +95,18 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
       let scrollingDir: ScrollingDir
       if (_offset < state.offset) {
         scrollingDir = ScrollingDir.BACKWARD
-        backwarding(_offset)
+        backward(_offset)
       } else {
         scrollingDir = ScrollingDir.FORWARD
         forwarding(_offset)
       }
 
       state.offset = _offset
-      state.scrolllingDir = scrollingDir
+      state.scrollingDir = scrollingDir
     })
   }
 
-  function backwarding(offset: number) {
+  function backward(offset: number) {
     const newStartNode = findStartNode(offset, props.type, props.data.length, undefined)
     // should not change range if start doesn't exceed overs
     if (newStartNode > this.range.start) {
@@ -147,6 +138,31 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
     this.checkRange(newStart, this.getEndByStart(newStart))
   }
 
+  function setSize(id: IDType, size: number) {
+    cachedSizes.value.set(id, size)
+
+    // get updates
+
+  }
+
+  function delSize(id: IDType) {
+    cachedSizes.value.delete(id)
+  }
+
+
+  provide(VirtualListInjectKey, {
+    setSize,
+    delSize,
+  })
+
+  onMounted(() => {
+    addResizeListener($(viewportRef), () => {}) // implement
+  })
+
+  onBeforeMount(() => {
+    removeResizeListener($(viewportRef), () => {}) // implement
+  })
+
   watch(
     () => [state.startNode, state.endNode],
     ([newStart, newEnd], [prevStart]) => {
@@ -169,7 +185,7 @@ export default function useVirtualScroll<T>(props: ElVirtualScrollProps<T>) {
   )
 
   return {
-    viewportRef: ref(null),
+    viewportRef,
     contentStyle,
     itemContainerStyle,
     itemStyle,

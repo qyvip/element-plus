@@ -64,7 +64,7 @@ import ElRate from '@element-plus/rate'
 import ElRow from '@element-plus/row'
 import ElScrollbar from '@element-plus/scrollbar'
 import ElSelect from '@element-plus/select'
-import ELSkeleton from '@element-plus/skeleton'
+import ElSkeleton from '@element-plus/skeleton'
 import ElSlider from '@element-plus/slider'
 import ElStep from '@element-plus/step'
 import ElSteps from '@element-plus/steps'
@@ -156,7 +156,7 @@ const components = [
   ElRow,
   ElScrollbar,
   ElSelect,
-  ELSkeleton,
+  ElSkeleton,
   ElSlider,
   ElStep,
   ElSteps,
@@ -266,7 +266,7 @@ export {
   ElRow,
   ElScrollbar,
   ElSelect,
-  ELSkeleton,
+  ElSkeleton,
   ElSlider,
   ElStep,
   ElSteps,

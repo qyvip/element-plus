@@ -82,6 +82,7 @@ import ElTooltip from '@element-plus/tooltip'
 import ElTransfer from '@element-plus/transfer'
 import ElTree from '@element-plus/tree'
 import ElUpload from '@element-plus/upload'
+import ELSkeleton from '@element-plus/skeleton'
 import { use } from '@element-plus/locale'
 import { version as version_ } from './version'
 import { setConfig } from '@element-plus/utils/config'
@@ -173,6 +174,7 @@ const components = [
   ElTransfer,
   ElTree,
   ElUpload,
+  ELSkeleton,
 ]
 
 const plugins = [
@@ -282,6 +284,7 @@ export {
   ElTransfer,
   ElTree,
   ElUpload,
+  ELSkeleton,
   version,
   install,
 }

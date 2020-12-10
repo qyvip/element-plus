@@ -295,6 +295,10 @@
             {
               "path": "/drawer",
               "title": "Drawer 抽屉"
+            },
+            {
+              "path": "/skeleton",
+              "title": "Skeleton 骨架屏"
             }
           ]
         }

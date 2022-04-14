@@ -1,24 +1,27 @@
-@import "function";
-@import "../common/var";
+@use 'function' as *;
+@use '../common/var' as *;
+// forward mixins
+@forward 'config';
+@forward 'function';
+@forward '_var';
+@use 'config' as *;
 
-/* Break-points
- -------------------------- */
-@mixin res($key, $map: $--breakpoints) {
-  // 循环断点Map，如果存在则返回
+// Break-points
+@mixin res($key, $map: $breakpoints) {
+  // loop breakpoint Map, return if present
   @if map-has-key($map, $key) {
-    @media only screen and #{inspect(map-get($map, $key))} {
+    @media only screen and #{unquote(map-get($map, $key))} {
       @content;
     }
   } @else {
-    @warn "Undefeined points: `#{$map}`";
+    @warn "Undefined points: `#{$map}`";
   }
 }
 
-/* Scrollbar
- -------------------------- */
+// Scrollbar
 @mixin scroll-bar {
-  $--scrollbar-thumb-background: #b4bccc;
-  $--scrollbar-track-background: #fff;
+  $scrollbar-thumb-background: getCssVar('text-color', 'disabled');
+  $scrollbar-track-background: getCssVar('fill-color', 'blank');
 
   &::-webkit-scrollbar {
     z-index: 11;
@@ -31,44 +34,27 @@
     &-thumb {
       border-radius: 5px;
       width: 6px;
-      background: $--scrollbar-thumb-background;
+      background: $scrollbar-thumb-background;
     }
 
     &-corner {
-      background: $--scrollbar-track-background;
+      background: $scrollbar-track-background;
     }
 
     &-track {
-      background: $--scrollbar-track-background;
+      background: $scrollbar-track-background;
 
       &-piece {
-        background: $--scrollbar-track-background;
+        background: $scrollbar-track-background;
         width: 6px;
       }
     }
   }
 }
 
-/* Placeholder
- -------------------------- */
-@mixin placeholder {
-  &::-webkit-input-placeholder {
-    @content
-  }
-
-  &::-moz-placeholder {
-    @content
-  }
-
-  &:-ms-input-placeholder {
-    @content
-  }
-}
-
-/* BEM
- -------------------------- */
+// BEM
 @mixin b($block) {
-  $B: $namespace+'-'+$block !global;
+  $B: $namespace + '-' + $block !global;
 
   .#{$B} {
     @content;
@@ -78,9 +64,14 @@
 @mixin e($element) {
   $E: $element !global;
   $selector: &;
-  $currentSelector: "";
+  $currentSelector: '';
   @each $unit in $element {
-    $currentSelector: #{$currentSelector + "." + $B + $element-separator + $unit + ","};
+    $currentSelector: #{$currentSelector +
+      '.' +
+      $B +
+      $element-separator +
+      $unit +
+      ','};
   }
 
   @if hitAllSpecialNestRule($selector) {
@@ -102,9 +93,13 @@
 
 @mixin m($modifier) {
   $selector: &;
-  $currentSelector: "";
+  $currentSelector: '';
   @each $unit in $modifier {
-    $currentSelector: #{$currentSelector + & + $modifier-separator + $unit + ","};
+    $currentSelector: #{$currentSelector +
+      $selector +
+      $modifier-separator +
+      $unit +
+      ','};
   }
 
   @at-root {
@@ -124,14 +119,19 @@
 
   @at-root {
     #{$selector} {
-      .#{$B+$interpolation+$modifier-separator+$modifier} {
+      .#{$B + $interpolation + $modifier-separator + $modifier} {
         @content;
       }
     }
   }
 }
 
-@mixin spec-selector($specSelector: '', $element: $E, $modifier: false, $block: $B) {
+@mixin spec-selector(
+  $specSelector: '',
+  $element: $E,
+  $modifier: false,
+  $block: $B
+) {
   $modifierCombo: '';
 
   @if $modifier {
@@ -139,7 +139,10 @@
   }
 
   @at-root {
-    #{&}#{$specSelector}.#{$block+$element-separator+$element+$modifierCombo} {
+    #{&}#{$specSelector}.#{$block
+      + $element-separator
+      + $element
+      + $modifierCombo} {
       @content;
     }
   }
@@ -155,7 +158,7 @@
 
   @at-root {
     #{$selector} {
-      .#{$block+$element-separator+$element+$modifierCombo} {
+      .#{$block + $element-separator + $element + $modifierCombo} {
         @content;
       }
     }
@@ -171,11 +174,11 @@
 }
 
 @mixin extend-rule($name) {
-  @extend #{'%shared-'+$name};
+  @extend #{'%shared-' + $name} !optional;
 }
 
 @mixin share-rule($name) {
-  $rule-name: '%shared-'+$name;
+  $rule-name: '%shared-' + $name;
 
   @at-root #{$rule-name} {
     @content;
@@ -189,12 +192,12 @@
 }
 
 @mixin picker-popper($background, $border, $box-shadow) {
-  &.el-popper[role="tooltip"] {
+  &.#{$namespace}-popper[role='tooltip'] {
     background: $background;
     border: $border;
     box-shadow: $box-shadow;
 
-    .el-popper__arrow {
+    .#{$namespace}-popper__arrow {
       &::before {
         border: $border;
       }
@@ -202,14 +205,31 @@
 
     @each $placement,
       $adjacency
-      in ('top': 'left', 'bottom': 'right', 'left': 'bottom', 'right': 'top')
+        in ('top': 'left', 'bottom': 'right', 'left': 'bottom', 'right': 'top')
     {
       &[data-popper-placement^='#{$placement}'] {
-        .el-popper__arrow::before {
+        .#{$namespace}-popper__arrow::before {
           border-#{$placement}-color: transparent;
           border-#{$adjacency}-color: transparent;
         }
       }
     }
+  }
+}
+
+// dark
+@mixin dark($block) {
+  html.dark {
+    @include b($block) {
+      @content;
+    }
+  }
+}
+
+@mixin inset-input-border($color, $important: false) {
+  @if $important == true {
+    box-shadow: 0 0 0 1px $color inset !important;
+  } @else {
+    box-shadow: 0 0 0 1px $color inset;
   }
 }

@@ -1,2 +1,2 @@
-# [TYPE](SCOPE):DESCRIPTION#[ISSUE]
-# example feat(button):add type 'button' for form usage #1234
+# [TYPE](SCOPE): [component-name] DESCRIPTION#[ISSUE]
+# example: feat(components): [button] add type for form usage #1234

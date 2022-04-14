@@ -1,12 +1,12 @@
 {
   "name": "@element-plus/locale",
-  "version": "0.0.0",
-  "main": "dist/index.js",
+  "version": "0.0.5",
+  "description": "Element Plus locale",
   "license": "MIT",
-  "peerDependencies": {
-    "vue": "^3.0.3"
-  },
-  "devDependencies": {
-    "@vue/test-utils": "^2.0.0-beta.3"
-  }
+  "main": "index.ts",
+  "module": "index.ts",
+  "unpkg": "index.js",
+  "jsdelivr": "index.js",
+  "types": "index.d.ts",
+  "gitHead": "c69724230befa8fede0e6b9c37fb0b7e39fd7cdd"
 }

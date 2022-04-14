@@ -1,11 +1,13 @@
-import { ComponentPublicInstance } from '@vue/test-utils'
+import type { CSSProperties, ComponentPublicInstance } from 'vue'
 
 declare module '@vue/test-utils' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface DOMWrapper<ElementType> {
-    style: CSSStyleDeclaration
+    style: CSSProperties
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface VueWrapper<T extends ComponentPublicInstance> {
-    style: CSSStyleDeclaration
+    style: CSSProperties
   }
 }

@@ -1,18 +1,30 @@
-type OptionalKeys<T extends Record<string, unknown>> = {
-  [K in keyof T]: T extends Record<K, T[K]>
-    ? never
-    : K
-}[keyof T]
+import { isArray, isObject } from '@vue/shared'
+import { isNil } from 'lodash-unified'
 
-type RequiredKeys<T extends Record<string, unknown>> = Exclude<keyof T, OptionalKeys<T>>
+export {
+  isArray,
+  isFunction,
+  isObject,
+  isString,
+  isDate,
+  isPromise,
+  isSymbol,
+} from '@vue/shared'
+export { isBoolean, isNumber } from '@vueuse/core'
+export { isVNode } from 'vue'
 
-type MonoArgEmitter<T, Keys extends keyof T> = <K extends Keys>(evt: K, arg?: T[K]) => void
+export const isUndefined = (val: any): val is undefined => val === undefined
 
-type BiArgEmitter<T, Keys extends keyof T> = <K extends Keys>(evt: K, arg: T[K]) => void
+export const isEmpty = (val: unknown) =>
+  (!val && val !== 0) ||
+  (isArray(val) && val.length === 0) ||
+  (isObject(val) && !Object.keys(val).length)
 
-export type EventEmitter<T extends Record<string, unknown>> =
-  MonoArgEmitter<T, OptionalKeys<T>> & BiArgEmitter<T, RequiredKeys<T>>
+export const isElement = (e: unknown): e is Element => {
+  if (typeof Element === 'undefined') return false
+  return e instanceof Element
+}
 
-export type AnyFunction<T> = (...args: any[]) => T
-
-export type PartialReturnType<T extends (...args: unknown[]) =>  unknown> = Partial<ReturnType<T>>
+export const isPropAbsent = (prop: unknown): prop is null | undefined => {
+  return isNil(prop)
+}

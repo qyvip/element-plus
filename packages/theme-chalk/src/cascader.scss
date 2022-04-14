@@ -1,37 +1,53 @@
-@import "mixins/mixins";
-@import "common/var";
-@import "./input";
-@import "./popper";
-@import "./tag";
-@import "./cascader-panel";
+@use 'sass:map';
+
+@use 'mixins/mixins' as *;
+@use 'mixins/var' as *;
+@use 'common/var' as *;
 
 @include b(cascader) {
+  @include set-component-css-var('cascader', $cascader);
+
   display: inline-block;
   position: relative;
-  font-size: $--font-size-base;
-  line-height: $--input-height;
+  font-size: var(--el-font-size-base);
+  line-height: map.get($input-height, 'default');
   outline: none;
 
   &:not(.is-disabled):hover {
-    .el-input__inner {
+    .#{$namespace}-input__inner {
       cursor: pointer;
-      border-color: $--input-hover-border;
+      box-shadow: 0 0 0 1px var(--el-input-hover-border-color) inset;
     }
   }
 
-  .el-input {
+  .#{$namespace}-input {
     cursor: pointer;
 
-    .el-input__inner {
+    .#{$namespace}-input__inner {
       text-overflow: ellipsis;
 
       &:focus {
-        border-color: $--input-focus-border;
+        box-shadow: 0 0 0 1px
+          var(
+            --el-input-focus-border-color,
+            map.get($input, 'focus-border-color')
+          )
+          inset;
       }
     }
 
-    .el-icon-arrow-down {
-      transition: transform .3s;
+    .#{$namespace}-input__suffix-inner {
+      .#{$namespace}-icon {
+        height: calc(100% - 2px);
+
+        svg {
+          vertical-align: middle;
+        }
+      }
+    }
+
+    .icon-arrow-down {
+      transition: transform var(--el-transition-duration);
       font-size: 14px;
 
       @include when(reverse) {
@@ -39,48 +55,56 @@
       }
     }
 
-    .el-icon-circle-close:hover {
-      color: $--input-clear-hover-color;
+    .icon-circle-close:hover {
+      color: var(
+        --el-input-clear-hover-color,
+        map.get($input, 'clear-hover-color')
+      );
     }
 
     @include when(focus) {
-      .el-input__inner {
-        border-color: $--input-focus-border;
+      .#{$namespace}-input__inner {
+        box-shadow: 0 0 0 1px
+          var(
+            --el-input-focus-border-color,
+            map.get($input, 'focus-border-color')
+          )
+          inset;
       }
     }
   }
 
-  @include m(medium) {
-    font-size: $--input-medium-font-size;
-    line-height: $--input-medium-height;
-  }
-
-  @include m(small) {
-    font-size: $--input-small-font-size;
-    line-height: $--input-small-height;
-  }
-
-  @include m(mini) {
-    font-size: $--input-mini-font-size;
-    line-height: $--input-mini-height;
+  @each $size in (large, small) {
+    @include m($size) {
+      font-size: map.get($input-font-size, $size);
+      line-height: map.get($input-height, $size);
+    }
   }
 
   @include when(disabled) {
-    .el-cascader__label {
-      z-index: #{$--index-normal + 1};
-      color: $--disabled-color-base;
+    .#{$namespace}-cascader__label {
+      z-index: calc(var(--el-index-normal) + 1);
+      color: getCssVar('disabled-text-color');
     }
   }
 
   @include e(dropdown) {
-    font-size: $--cascader-menu-font-size;
-    border-radius: $--cascader-menu-radius;
+    @include set-component-css-var('cascader', $cascader);
+  }
+
+  @include e(dropdown) {
+    font-size: var(--el-cascader-menu-font-size);
+    border-radius: var(--el-cascader-menu-radius);
 
     @include picker-popper(
-      $--cascader-menu-fill,
-      $--cascader-menu-border,
-      $--cascader-menu-shadow,
+      var(--el-cascader-menu-fill),
+      var(--el-cascader-menu-border),
+      var(--el-cascader-menu-shadow)
     );
+
+    &.#{$namespace}-popper {
+      box-shadow: var(--el-cascader-menu-shadow);
+    }
   }
 
   @include e(tags) {
@@ -95,13 +119,13 @@
     text-align: left;
     box-sizing: border-box;
 
-    .el-tag {
+    .#{$namespace}-tag {
       display: inline-flex;
       align-items: center;
       max-width: 100%;
       margin: 2px 0 2px 6px;
       text-overflow: ellipsis;
-      background: $--cascader-tag-background;
+      background: var(--el-cascader-tag-background);
 
       &:not(.is-hit) {
         border-color: transparent;
@@ -113,28 +137,42 @@
         text-overflow: ellipsis;
       }
 
-      .el-icon-close {
+      .#{$namespace}-icon-close {
         flex: none;
-        background-color: $--color-text-placeholder;
-        color: $--color-white;
+        background-color: var(--el-text-color-placeholder);
+        color: var(--el-color-white);
 
         &:hover {
-          background-color: $--color-text-secondary;
+          background-color: var(--el-text-color-secondary);
         }
       }
     }
   }
 
+  @include e(collapse-tags) {
+    white-space: normal;
+    z-index: var(--el-index-normal);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @include e(collapse-tag) {
+    line-height: inherit;
+    height: inherit;
+    display: flex;
+  }
+
   @include e(suggestion-panel) {
-    border-radius: $--cascader-menu-radius;
+    border-radius: var(--el-cascader-menu-radius);
   }
 
   @include e(suggestion-list) {
     max-height: 204px;
     margin: 0;
     padding: 6px 0;
-    font-size: $--font-size-base;
-    color: $--cascader-menu-font-color;
+    font-size: var(--el-font-size-base);
+    color: var(--el-cascader-menu-text-color);
     text-align: center;
   }
 
@@ -148,12 +186,13 @@
     outline: none;
     cursor: pointer;
 
-    &:hover, &:focus {
-      background: $--cascader-node-background-hover;
+    &:hover,
+    &:focus {
+      background: var(--el-cascader-node-background-hover);
     }
 
     &.is-checked {
-      color: $--cascader-menu-selected-font-color;
+      color: var(--el-cascader-menu-selected-text-color);
       font-weight: bold;
     }
 
@@ -164,22 +203,25 @@
 
   @include e(empty-text) {
     margin: 10px 0;
-    color: $--cascader-color-empty;
+    color: var(--el-cascader-color-empty);
   }
 
   @include e(search-input) {
     flex: 1;
     height: 24px;
     min-width: 60px;
-    margin: 2px 0 2px 15px;
+    margin: 2px 0 2px map.get($input-padding-horizontal, 'default')-$border-width;
     padding: 0;
-    color: $--cascader-menu-font-color;
+    color: getCssVar('cascader', 'menu-text-color');
     border: none;
     outline: none;
     box-sizing: border-box;
 
+    background: transparent;
+
     &::placeholder {
-      color: $--color-text-placeholder;
+      // two input overlap
+      color: transparent;
     }
   }
 }

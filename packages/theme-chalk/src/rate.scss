@@ -1,28 +1,49 @@
-@import "mixins/mixins";
-@import "common/var";
+@use 'sass:map';
+
+@use 'mixins/mixins' as *;
+@use 'mixins/var' as *;
+@use 'common/var' as *;
+
+$rate-height: () !default;
+$rate-height: map.merge(
+  (
+    'large': 40px,
+    'default': 32px,
+    'small': 24px,
+  ),
+  $rate-height
+);
 
 @include b(rate) {
-  height: $--rate-height;
-  line-height: 1;
+  @include set-component-css-var('rate', $rate);
+}
 
-  &:focus, &:active {
+@include b(rate) {
+  display: inline-flex;
+  align-items: center;
+  height: map.get($rate-height, 'default');
+
+  &:focus,
+  &:active {
     outline-width: 0;
   }
 
   @include e(item) {
+    cursor: pointer;
     display: inline-block;
     position: relative;
     font-size: 0;
     vertical-align: middle;
+    color: var(--el-rate-void-color);
   }
 
-  @include e(icon) {
+  & .#{bem('rate', 'icon')} {
     position: relative;
     display: inline-block;
-    font-size: $--rate-icon-size;
-    margin-right: $--rate-icon-margin;
-    color: $--rate-icon-color;
-    transition: .3s;
+    font-size: var(--el-rate-icon-size);
+    margin-right: var(--el-rate-icon-margin);
+    transition: var(--el-transition-duration);
+
     &.hover {
       transform: scale(1.15);
     }
@@ -32,6 +53,10 @@
       left: 0;
       top: 0;
     }
+
+    @include when(active) {
+      color: getCssVar('rate', 'fill-color');
+    }
   }
 
   @include e(decimal) {
@@ -40,10 +65,25 @@
     left: 0;
     display: inline-block;
     overflow: hidden;
+    color: getCssVar('rate', 'fill-color');
   }
 
   @include e(text) {
-    font-size: $--rate-font-size;
+    font-size: var(--el-rate-font-size);
     vertical-align: middle;
+    color: getCssVar('rate', 'text-color');
+  }
+
+  @each $size in (large, small) {
+    @include m($size) {
+      height: map.get($rate-height, $size);
+    }
+  }
+
+  @include when(disabled) {
+    @include e(item) {
+      cursor: auto;
+      color: getCssVar('rate', 'disabled-void-color');
+    }
   }
 }
